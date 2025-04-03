@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noise Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-800 text-white flex items-center justify-center min-h-screen">
+  <div class="text-center p-8 bg-gray-900 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold mb-6">Noise Generator</h1>
+    <button id="generateButton" class="bg-blue-500 text-white py-2 px-6 rounded-full hover:bg-blue-600 transition duration-200">
+      Generate Noise
+    </button>
+    <div id="spinner" class="mt-6 hidden">
+      <svg class="animate-spin h-12 w-12 mx-auto text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0116 0 8 8 0 01-16 0z"></path>
+      </svg>
+    </div>
+    <audio id="audioPlayer" controls class="mt-6 w-full"></audio>
+  </div>
+
+  <script>
+    document.getElementById('generateButton').addEventListener('click', async () => {
+      // Show the spinner and hide the button
+      document.getElementById('spinner').classList.remove('hidden');
+      document.getElementById('generateButton').classList.add('hidden');
+
+      const sampleRate = 44100;
+      const freq1 = 110;
+      const freq2 = 220;
+      const freq3 = 440;
+      const duration = 60 * 60;  // 1 hour in seconds
+      const numSamples = sampleRate * duration;
+
+      const randNoise = Array.from({ length: sampleRate }, () => Math.random());
+
+      function fade(t) {
+        return t * t * t * (t * (t * 6 - 15) + 10);
+      }
+
+      function grad(p) {
+        const index = Math.floor(p) % randNoise.length;
+        return randNoise[index] > 0.5 ? 1.0 : -1.0;
+      }
+
+      function noise(p) {
+        const p0 = Math.floor(p);
+        const p1 = p0 + 1.0;
+
+        const t = p - p0;
+        const fadeT = fade(t);
+
+        const g0 = grad(p0);
+        const g1 = grad(p1);
+
+        return (1.0 - fadeT) * g0 * (p - p0) + fadeT * g1 * (p - p1);
+      }
+
+      const audioData = new Float32Array(numSamples);
+      for (let i = 0; i < numSamples; i++) {
+        const x1 = i / (sampleRate / freq1);
+        const x2 = i / (sampleRate / freq2);
+        const x3 = i / (sampleRate / freq3);
+
+        const n1 = noise(x1);
+        const n2 = noise(x2);
+        const n3 = noise(x3);
+
+        const sample = 0.5 * n1 + 0.3 * n2 + 0.2 * n3;
+        audioData[i] = sample;
+      }
+
+      const wavBuffer = await createWav(audioData, sampleRate);
+      const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+      const url = URL.createObjectURL(blob);
+      const audioPlayer = document.getElementById('audioPlayer');
+      audioPlayer.src = url;
+      audioPlayer.loop = true; // Loop for an hour
+      audioPlayer.play();
+
+      // Hide the spinner and show the button again
+      document.getElementById('spinner').classList.add('hidden');
+      document.getElementById('generateButton').classList.remove('hidden');
+    });
+
+    async function createWav(audioData, sampleRate) {
+      const numChannels = 1;
+      const bitsPerSample = 32;
+      const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+      const blockAlign = numChannels * (bitsPerSample / 8);
+      const dataSize = audioData.length * (bitsPerSample / 8);
+      const fileSize = 44 + dataSize;
+
+      const buffer = new ArrayBuffer(fileSize);
+      const view = new DataView(buffer);
+
+      // RIFF header
+      writeString(view, 0, 'RIFF');
+      view.setUint32(4, fileSize - 8, true);
+      writeString(view, 8, 'WAVE');
+
+      // fmt subchunk
+      writeString(view, 12, 'fmt ');
+      view.setUint32(16, 16, true); // Subchunk1Size
+      view.setUint16(20, 3, true); // AudioFormat (3 for float)
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitsPerSample, true);
+
+      // data subchunk
+      writeString(view, 36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      // Write audio samples
+      for (let i = 0; i < audioData.length; i++) {
+        view.setFloat32(44 + i * 4, audioData[i], true);
+      }
+      return buffer;
+    }
+
+    function writeString(view, offset, string) {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    }
+  </script>
+</body>
+</html>
