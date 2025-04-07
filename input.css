@@ -1,7 +1,10 @@
+
 @import "tailwindcss";
+
 @source "./dist/*.{html,js,templ}";
 
 
+@plugin "tailwindcss-animated";
 
 @plugin "daisyui"{
   /* biome-ignore lint/correctness/noUnknownProperty: customization */
