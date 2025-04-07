@@ -65,7 +65,7 @@ async function generateNoise() {
     const freq1 = 110;
     const freq2 = 220;
     const freq3 = 440;
-    const duration = 60 * 60; // 1 hour in seconds
+    const duration = 60 * 25; // 1 hour in seconds
     const numSamples = sampleRate * duration;
 
     const randNoise = Array.from({ length: sampleRate }, () => Math.random());
