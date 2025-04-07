@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@source "./dist/*.{html,js,templ}";
+
+
+
+@plugin "daisyui"{
+  /* biome-ignore lint/correctness/noUnknownProperty: customization */
+  themes: light --default, dark --prefersdark, coffee, night;
+}
+
+@plugin "@iconify/tailwind4";
