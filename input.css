@@ -1,7 +1,7 @@
 
 @import "tailwindcss";
 
-@source "./dist/*.{html,js,templ}";
+@source "./docs/*.{html,js,templ}";
 
 
 @plugin "tailwindcss-animated";
