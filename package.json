@@ -5,5 +5,8 @@
         "daisyui": "^5.0.0",
         "htmx.org": "2.0.4",
         "tailwindcss-animated": "^1.1.2"
+    },
+    "scripts": {
+        "build": "tailwindcss -i ./input.css -o ./dist/style.css  --minify "
     }
   }
